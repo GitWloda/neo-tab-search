@@ -301,6 +301,17 @@ export function injectTabsInList(getState) {
   return function doInjectTabsInList(tabArray) {
     const wasNoResult = tabList.querySelectorAll('.tab-object').length === 0;
     const showNoResult = tabArray.length === 0;
+
+    // Aggiungi il gestore per l'evento di pressione del tasto Enter sull'input di ricerca
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && showNoResult) {
+        // Apri una nuova tab vuota solo se non ci sono risultati e viene premuto Enter
+        const searchQuery = searchInput.value.trim();
+        const url = `https://www.google.com/search?client=firefox-b-d&q=${encodeURIComponent(searchQuery)}`;
+        browser.tabs.create({ url });
+      }
+    });
+
     // Don't update dom if we're going to show no results again
     if (wasNoResult && showNoResult) return tabArray;
 
@@ -308,7 +319,7 @@ export function injectTabsInList(getState) {
 
     // Add nodes to tabList & attach event listeners
     if (showNoResult) {
-      tabList.appendChild(createNoResult());
+      // In questo caso, non fare nulla qui perché l'apertura della tab vuota è gestita nell'evento di pressione del tasto Enter
     } else {
       tabArray.map(tabToTag(getState)).forEach((tabNode) => {
         addTabListeners(getState)(tabNode);
@@ -318,6 +329,18 @@ export function injectTabsInList(getState) {
     return tabArray;
   };
 }
+
+// Aggiungi la gestione dell'evento di ricerca per l'input
+searchInput.addEventListener('input', (event) => {
+  const searchQuery = event.target.value.trim();
+  if (searchQuery.length > 0) {
+    // Effettua la ricerca e popola la lista delle schede
+    populateTabList(searchQuery);
+  } else {
+    // Se l'input di ricerca è vuoto, mostra tutte le schede
+    populateTabList('');
+  }
+});
 
 export function scrollIfNeeded(event) {
   // If the selected tab isn't completely visible in the scrolled view,
